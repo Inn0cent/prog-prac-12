@@ -12,21 +12,23 @@ public class WordFrequency
     
     private String inputString;
     private HashMap<String, Integer> words;
+    private String documentType;
+    private static HashMap<String, WordFrequency> typeFrequency;
+    private int combines = 0;
     
-    private WordFrequency(String input)
+    public WordFrequency(String input, String docType)
     {
         inputString = input;
         words = new HashMap<String, Integer>();
+        typeFrequency = new HashMap<String, WordFrequency>();
     }
     
-    public static WordFrequency makeInstance(String filename){
+    public static WordFrequency makeInstance(String filename, String docType){
         String line = null;
-        String input = null;
+        String input = "";
         try {
             FileReader fileReader = new FileReader(filename);
-
             BufferedReader bufferedReader = new BufferedReader(fileReader);
-
             while((line = bufferedReader.readLine()) != null) {
                 input += line + " ";
             }   
@@ -38,7 +40,13 @@ public class WordFrequency
         catch(IOException ex) {
             System.out.println("Error reading file '" + filename + "' instansiating with curent string");                  
         }
-        return new WordFrequency(input);
+        return new WordFrequency(input, docType);
+    }
+    
+    public static void classifyAs(String docType, String text){
+        //combines += 1;
+        typeFrequency.get(docType).addMoreText(text);
+        //for(String incl : 
     }
     
     public Set wordsIncluded(){
@@ -55,8 +63,9 @@ public class WordFrequency
    
     public int wordFrequency(String test){
         String[] included = inputString.split("\\s");
-        Integer testing = 0;
-        words.put(test, 0);
+        if(!words.containsKey(test)){
+            words.put(test, 0);
+        }
         for(String word : included){
            if(word.equals(test)){
                words.put(test, words.get(test) + 1);
