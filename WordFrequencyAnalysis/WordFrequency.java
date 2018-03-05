@@ -9,21 +9,59 @@ import java.io.*;
  */
 public class WordFrequency
 {
-    
+
     private String inputString;
-    private HashMap<String, Integer> words;
+    private HashMap<String, Double> words;
     private String documentType;
-    private static HashMap<String, WordFrequency> typeFrequency;
-    private int combines = 0;
-    
-    public WordFrequency(String input, String docType)
+    private static HashMap<String, WordFrequency> typeFrequency= new HashMap<String, WordFrequency>();
+    private int combines;
+
+    public WordFrequency(String input)
     {
-        inputString = input;
-        words = new HashMap<String, Integer>();
-        typeFrequency = new HashMap<String, WordFrequency>();
+        inputString = input.toLowerCase().replaceAll("(?:--|[\\[\\]{}()+/\\\\]).,'!", "");
+        words = new HashMap<String, Double>();
+        combines = 0;
     }
-    
-    public static WordFrequency makeInstance(String filename, String docType){
+
+    public static WordFrequency makeInstance(String filename){
+        return new WordFrequency(getFromFile(filename));
+    }
+
+    public static void train(String filename, String docType){
+        classifyAs(docType, getFromFile(filename));
+    }
+
+    public static void classifyAs(String docType, String text){
+        boolean newDocType = true;
+        String[] included = text.toLowerCase().split(" ");
+        for(String type : typeFrequency.keySet()){
+            if(type.equals(docType)){
+                newDocType = false;
+            }
+        }
+
+        if(newDocType){
+            WordFrequency newType = new WordFrequency(text);
+            typeFrequency.put(docType, newType);
+        } else {
+            typeFrequency.get(docType).addMoreText(text);
+        }
+        typeFrequency.get(docType).allRelFrequencies();
+    }
+
+    public static String checkType(String filename){
+        double minDistance = 100000000;
+        String likelyType = "none";
+        WordFrequency test = new WordFrequency(getFromFile(filename));
+        for(String type : typeFrequency.keySet()){
+            if(minDistance > (minDistance = typeFrequency.get(type).distanceBetween(test))){
+                likelyType = type;
+            }
+        }
+        return likelyType;
+    }
+
+    public static String getFromFile(String filename){
         String line = null;
         String input = "";
         try {
@@ -40,41 +78,67 @@ public class WordFrequency
         catch(IOException ex) {
             System.out.println("Error reading file '" + filename + "' instansiating with curent string");                  
         }
-        return new WordFrequency(input, docType);
+        return input;
     }
-    
-    public static void classifyAs(String docType, String text){
-        //combines += 1;
-        typeFrequency.get(docType).addMoreText(text);
-        //for(String incl : 
-    }
-    
-    public Set wordsIncluded(){
-        String[] included = inputString.split("\\s");
-        for(String incl : included){
-            words.put(incl, 0);
+
+    public double distanceBetween(WordFrequency compare){
+        HashMap<String, Double> distances = new HashMap<String, Double>();
+        double distance = 0;
+        this.allRelFrequencies();
+        compare.allRelFrequencies();
+        HashMap<String, Double> wordsThis = new HashMap<String, Double>(this.returnWords());
+        HashMap<String, Double> wordsThat = new HashMap<String, Double>(compare.returnWords());
+        for(String wordThis : wordsThis.keySet()){
+            distances.put(wordThis, 0.0);
         }
+        for(String wordThat : wordsThat.keySet()){
+            distances.put(wordThat, 0.0);
+        }
+        for(String word : distances.keySet()){
+            if(wordsThis.get(word) == null){
+                distance += wordsThat.get(word);
+            } else if (wordsThat.get(word) == null){
+                distance += wordsThis.get(word);
+            } else {
+                distance += Math.abs(wordsThis.get(word) - wordsThat.get(word));
+            }
+        }
+        return distance;
+    }
+
+    public Set<String> wordsIncluded(){
         return words.keySet();
     }
-    
-    public void addMoreText(String text){
-        inputString += text;
+
+    public HashMap<String, Double> returnWords(){
+        return words;
     }
-   
-    public int wordFrequency(String test){
+
+    public void addMoreText(String text){
+        inputString += " " + text.toLowerCase().replaceAll("(?:--|[\\[\\]{}()+/\\\\]).,'!", "");
+    }
+    
+    public void allRelFrequencies(){
         String[] included = inputString.split("\\s");
-        if(!words.containsKey(test)){
-            words.put(test, 0);
-        }
         for(String word : included){
-           if(word.equals(test)){
-               words.put(test, words.get(test) + 1);
+            relativeFrequency(word);
+        }
+    }
+
+    public double wordFrequency(String test){
+        String[] included = inputString.split("\\s");
+        test = test.toLowerCase();
+        words.put(test, 0.0);
+        for(String word : included){
+            if(word.equals(test)){
+                words.put(test, words.get(test) + 1);
             }
         }
         return words.get(test);
     }
-    
+
     public double relativeFrequency(String test){
-        return wordFrequency(test)*1.0/inputString.split("\\s").length;
+        words.put(test, wordFrequency(test.toLowerCase())*1.0/inputString.split("\\s").length);
+        return words.get(test);
     }
 }
