@@ -13,8 +13,9 @@ public class WordFrequency
     private String inputString;
     private HashMap<String, Double> words;
     private String documentType;
-    private static HashMap<String, WordFrequency> typeFrequency= new HashMap<String, WordFrequency>();
+    private static HashMap<String, WordFrequency> typeFrequency = new HashMap<String, WordFrequency>();
     private int combines;
+    private static final String[] trainingSet = {"viva_la_vida.txt", "Coldplay", "paradise.txt", "Coldplay", "everglow.txt", "Coldplay", "heathens.txt", "Twenty One Pilots", "lane boy.txt", "Twenty One Pilots", "car radio.txt", "Twenty One Pilots"};
 
     public WordFrequency(String input)
     {
@@ -27,6 +28,12 @@ public class WordFrequency
         return new WordFrequency(getFromFile(filename));
     }
 
+    public static void applyTrainingSet(){
+        for(int i = 0; i < trainingSet.length-1; i += 2){
+            train(trainingSet[i], trainingSet[i+1]);
+        }
+    }
+    
     public static void train(String filename, String docType){
         classifyAs(docType, getFromFile(filename));
     }
